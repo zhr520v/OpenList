@@ -88,6 +88,7 @@ func FsMove(c *gin.Context) {
 		common.ErrorResp(c, err, 403)
 		return
 	}
+
 	if !req.Overwrite {
 		for _, name := range req.Names {
 			if res, _ := fs.Get(c, stdpath.Join(dstDir, name), &fs.GetArgs{NoLog: true}); res != nil {
@@ -96,9 +97,12 @@ func FsMove(c *gin.Context) {
 			}
 		}
 	}
+	
+	// Create all tasks immediately without any synchronous validation
+	// All validation will be done asynchronously in the background
 	var addedTasks []task.TaskExtensionInfo
 	for i, name := range req.Names {
-		t, err := fs.MoveWithTask(c, stdpath.Join(srcDir, name), dstDir, len(req.Names) > i+1)
+		t, err := fs.MoveWithTaskAndValidation(c, stdpath.Join(srcDir, name), dstDir, !req.Overwrite, len(req.Names) > i+1)
 		if t != nil {
 			addedTasks = append(addedTasks, t)
 		}
@@ -107,12 +111,17 @@ func FsMove(c *gin.Context) {
 			return
 		}
 	}
+	
+	// Return immediately with task information
 	if len(addedTasks) > 0 {
 		common.SuccessResp(c, gin.H{
+			"message": fmt.Sprintf("Successfully created %d move task(s)", len(addedTasks)),
 			"tasks": getTaskInfos(addedTasks),
 		})
 	} else {
-		common.SuccessResp(c)
+		common.SuccessResp(c, gin.H{
+			"message": "Move operations completed immediately",
+		})
 	}
 }
 
@@ -141,6 +150,7 @@ func FsCopy(c *gin.Context) {
 		common.ErrorResp(c, err, 403)
 		return
 	}
+
 	if !req.Overwrite {
 		for _, name := range req.Names {
 			if res, _ := fs.Get(c, stdpath.Join(dstDir, name), &fs.GetArgs{NoLog: true}); res != nil {
@@ -149,6 +159,9 @@ func FsCopy(c *gin.Context) {
 			}
 		}
 	}
+	
+	// Create all tasks immediately without any synchronous validation
+	// All validation will be done asynchronously in the background
 	var addedTasks []task.TaskExtensionInfo
 	for i, name := range req.Names {
 		t, err := fs.Copy(c, stdpath.Join(srcDir, name), dstDir, len(req.Names) > i+1)
@@ -160,9 +173,18 @@ func FsCopy(c *gin.Context) {
 			return
 		}
 	}
-	common.SuccessResp(c, gin.H{
-		"tasks": getTaskInfos(addedTasks),
-	})
+	
+	// Return immediately with task information
+	if len(addedTasks) > 0 {
+		common.SuccessResp(c, gin.H{
+			"message": fmt.Sprintf("Successfully created %d copy task(s)", len(addedTasks)),
+			"tasks": getTaskInfos(addedTasks),
+		})
+	} else {
+		common.SuccessResp(c, gin.H{
+			"message": "Copy operations completed immediately",
+		})
+	}
 }
 
 type RenameReq struct {
