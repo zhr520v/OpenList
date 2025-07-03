@@ -68,7 +68,7 @@ func (d *Pan123) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 		var headers map[string]string
 		if !utils.IsLocalIPAddr(args.IP) {
 			headers = map[string]string{
-				//"X-Real-IP":       "1.1.1.1",
+				"X-Real-IP":       "120.229.187.217",
 				"X-Forwarded-For": args.IP,
 				"user-agent": "123pan/2.5.5(Android_13.1.2;Vivo)",
 		"platform": "android",
