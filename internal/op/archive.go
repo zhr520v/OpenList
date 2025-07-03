@@ -9,15 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/OpenListTeam/OpenList/internal/archive/tool"
-	"github.com/OpenListTeam/OpenList/internal/stream"
+	"github.com/OpenListTeam/OpenList/v4/internal/archive/tool"
+	"github.com/OpenListTeam/OpenList/v4/internal/stream"
 
-	"github.com/OpenListTeam/OpenList/internal/driver"
-	"github.com/OpenListTeam/OpenList/internal/errs"
-	"github.com/OpenListTeam/OpenList/internal/model"
-	"github.com/OpenListTeam/OpenList/pkg/singleflight"
-	"github.com/OpenListTeam/OpenList/pkg/utils"
-	"github.com/Xhofe/go-cache"
+	"github.com/OpenListTeam/OpenList/v4/internal/driver"
+	"github.com/OpenListTeam/OpenList/v4/internal/errs"
+	"github.com/OpenListTeam/OpenList/v4/internal/model"
+	"github.com/OpenListTeam/OpenList/v4/pkg/singleflight"
+	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
+	"github.com/OpenListTeam/go-cache"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -62,8 +62,8 @@ func GetArchiveToolAndStream(ctx context.Context, storage driver.Driver, path st
 	}
 	baseName, ext, found := strings.Cut(obj.GetName(), ".")
 	if !found {
-		if l.MFile != nil {
-			_ = l.MFile.Close()
+		if clr, ok := l.MFile.(io.Closer); ok {
+			_ = clr.Close()
 		}
 		if l.RangeReadCloser != nil {
 			_ = l.RangeReadCloser.Close()
@@ -75,8 +75,8 @@ func GetArchiveToolAndStream(ctx context.Context, storage driver.Driver, path st
 		var e error
 		partExt, t, e = tool.GetArchiveTool(stdpath.Ext(obj.GetName()))
 		if e != nil {
-			if l.MFile != nil {
-				_ = l.MFile.Close()
+			if clr, ok := l.MFile.(io.Closer); ok {
+				_ = clr.Close()
 			}
 			if l.RangeReadCloser != nil {
 				_ = l.RangeReadCloser.Close()
@@ -86,8 +86,8 @@ func GetArchiveToolAndStream(ctx context.Context, storage driver.Driver, path st
 	}
 	ss, err := stream.NewSeekableStream(stream.FileStream{Ctx: ctx, Obj: obj}, l)
 	if err != nil {
-		if l.MFile != nil {
-			_ = l.MFile.Close()
+		if clr, ok := l.MFile.(io.Closer); ok {
+			_ = clr.Close()
 		}
 		if l.RangeReadCloser != nil {
 			_ = l.RangeReadCloser.Close()
@@ -109,8 +109,8 @@ func GetArchiveToolAndStream(ctx context.Context, storage driver.Driver, path st
 			}
 			ss, err = stream.NewSeekableStream(stream.FileStream{Ctx: ctx, Obj: o}, l)
 			if err != nil {
-				if l.MFile != nil {
-					_ = l.MFile.Close()
+				if clr, ok := l.MFile.(io.Closer); ok {
+					_ = clr.Close()
 				}
 				if l.RangeReadCloser != nil {
 					_ = l.RangeReadCloser.Close()
@@ -174,9 +174,6 @@ func getArchiveMeta(ctx context.Context, storage driver.Driver, path string, arg
 	if !storage.Config().NoCache {
 		Expiration := time.Minute * time.Duration(storage.GetStorage().CacheExpiration)
 		archiveMetaProvider.Expiration = &Expiration
-	} else if ss[0].Link.MFile == nil {
-		// alias、crypt 驱动
-		archiveMetaProvider.Expiration = ss[0].Link.Expiration
 	}
 	return obj, archiveMetaProvider, err
 }
@@ -401,9 +398,6 @@ func DriverExtract(ctx context.Context, storage driver.Driver, path string, args
 			return nil, errors.Wrapf(err, "failed extract archive")
 		}
 		if link.Link.Expiration != nil {
-			if link.Link.IPCacheKey {
-				key = key + ":" + args.IP
-			}
 			extractCache.Set(key, link, cache.WithEx[*extractLink](*link.Link.Expiration))
 		}
 		return link, nil

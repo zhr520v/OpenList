@@ -7,12 +7,12 @@ import (
 	stdpath "path"
 	"strings"
 
-	"github.com/OpenListTeam/OpenList/internal/driver"
-	"github.com/OpenListTeam/OpenList/internal/errs"
-	"github.com/OpenListTeam/OpenList/internal/fs"
-	"github.com/OpenListTeam/OpenList/internal/model"
-	"github.com/OpenListTeam/OpenList/internal/stream"
-	"github.com/OpenListTeam/OpenList/pkg/utils"
+	"github.com/OpenListTeam/OpenList/v4/internal/driver"
+	"github.com/OpenListTeam/OpenList/v4/internal/errs"
+	"github.com/OpenListTeam/OpenList/v4/internal/fs"
+	"github.com/OpenListTeam/OpenList/v4/internal/model"
+	"github.com/OpenListTeam/OpenList/v4/internal/stream"
+	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 )
 
 type Alias struct {
@@ -113,6 +113,7 @@ func (d *Alias) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (
 	for _, dst := range dsts {
 		link, err := d.link(ctx, dst, sub, args)
 		if err == nil {
+			link.Expiration = nil // 去除非必要缓存，d.link里op.Lin有缓存
 			if !args.Redirect && len(link.URL) > 0 {
 				// 正常情况下 多并发 仅支持返回URL的驱动
 				// alias套娃alias 可以让crypt、mega等驱动(不返回URL的) 支持并发

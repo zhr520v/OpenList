@@ -2,19 +2,17 @@ package netease_music
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/OpenListTeam/OpenList/internal/driver"
-	"github.com/OpenListTeam/OpenList/internal/model"
-	"github.com/OpenListTeam/OpenList/internal/sign"
-	"github.com/OpenListTeam/OpenList/pkg/http_range"
-	"github.com/OpenListTeam/OpenList/pkg/utils"
-	"github.com/OpenListTeam/OpenList/pkg/utils/random"
-	"github.com/OpenListTeam/OpenList/server/common"
+	"github.com/OpenListTeam/OpenList/v4/internal/driver"
+	"github.com/OpenListTeam/OpenList/v4/internal/model"
+	"github.com/OpenListTeam/OpenList/v4/internal/sign"
+	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
+	"github.com/OpenListTeam/OpenList/v4/pkg/utils/random"
+	"github.com/OpenListTeam/OpenList/v4/server/common"
 )
 
 type HostsResp struct {
@@ -48,24 +46,15 @@ type LyricObj struct {
 	lyric string
 }
 
-func (lrc *LyricObj) getProxyLink(args model.LinkArgs) *model.Link {
-	rawURL := common.GetApiUrl(args.HttpReq) + "/p" + lrc.Path
+func (lrc *LyricObj) getProxyLink(ctx context.Context) *model.Link {
+	rawURL := common.GetApiUrl(ctx) + "/p" + lrc.Path
 	rawURL = utils.EncodePath(rawURL, true) + "?type=parsed&sign=" + sign.Sign(lrc.Path)
 	return &model.Link{URL: rawURL}
 }
 
 func (lrc *LyricObj) getLyricLink() *model.Link {
-	reader := strings.NewReader(lrc.lyric)
 	return &model.Link{
-		RangeReadCloser: &model.RangeReadCloser{
-			RangeReader: func(ctx context.Context, httpRange http_range.Range) (io.ReadCloser, error) {
-				if httpRange.Length < 0 {
-					return io.NopCloser(reader), nil
-				}
-				sr := io.NewSectionReader(reader, httpRange.Start, httpRange.Length)
-				return io.NopCloser(sr), nil
-			},
-		},
+		MFile: strings.NewReader(lrc.lyric),
 	}
 }
 

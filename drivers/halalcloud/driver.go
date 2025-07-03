@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/OpenListTeam/OpenList/drivers/base"
-	"github.com/OpenListTeam/OpenList/internal/driver"
-	"github.com/OpenListTeam/OpenList/internal/model"
-	"github.com/OpenListTeam/OpenList/internal/op"
-	"github.com/OpenListTeam/OpenList/pkg/http_range"
+	"github.com/OpenListTeam/OpenList/v4/drivers/base"
+	"github.com/OpenListTeam/OpenList/v4/internal/driver"
+	"github.com/OpenListTeam/OpenList/v4/internal/model"
+	"github.com/OpenListTeam/OpenList/v4/internal/op"
+	"github.com/OpenListTeam/OpenList/v4/pkg/http_range"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -255,9 +255,6 @@ func (d *HalalCloud) getLink(ctx context.Context, file model.Obj, args model.Lin
 		length := httpRange.Length
 		if httpRange.Length >= 0 && httpRange.Start+httpRange.Length >= size {
 			length = -1
-		}
-		if err != nil {
-			return nil, fmt.Errorf("open download file failed: %w", err)
 		}
 		oo := &openObject{
 			ctx:     ctx,

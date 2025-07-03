@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/OpenListTeam/OpenList/drivers/base"
-	"github.com/OpenListTeam/OpenList/internal/op"
+	"github.com/OpenListTeam/OpenList/v4/drivers/base"
+	"github.com/OpenListTeam/OpenList/v4/internal/op"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -38,7 +38,7 @@ func (d *YandexDisk) refreshToken() error {
 			if resp.ErrorMessage != "" {
 				return fmt.Errorf("failed to refresh token: %s", resp.ErrorMessage)
 			}
-			return fmt.Errorf("empty token returned from official API")
+			return fmt.Errorf("empty token returned from official API , a wrong refresh token may have been used")
 		}
 		d.AccessToken = resp.AccessToken
 		d.RefreshToken = resp.RefreshToken

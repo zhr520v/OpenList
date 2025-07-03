@@ -14,13 +14,13 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/OpenListTeam/OpenList/internal/errs"
-	"github.com/OpenListTeam/OpenList/internal/fs"
-	"github.com/OpenListTeam/OpenList/internal/model"
-	"github.com/OpenListTeam/OpenList/internal/op"
-	"github.com/OpenListTeam/OpenList/internal/stream"
-	"github.com/OpenListTeam/OpenList/pkg/http_range"
-	"github.com/OpenListTeam/OpenList/pkg/utils"
+	"github.com/OpenListTeam/OpenList/v4/internal/errs"
+	"github.com/OpenListTeam/OpenList/v4/internal/fs"
+	"github.com/OpenListTeam/OpenList/v4/internal/model"
+	"github.com/OpenListTeam/OpenList/v4/internal/op"
+	"github.com/OpenListTeam/OpenList/v4/internal/stream"
+	"github.com/OpenListTeam/OpenList/v4/pkg/http_range"
+	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 	"github.com/itsHenry35/gofakes3"
 	"github.com/ncw/swift/v2"
 	log "github.com/sirupsen/logrus"
@@ -187,7 +187,11 @@ func (b *s3Backend) GetObject(ctx context.Context, bucketName, objectName string
 		if err != nil {
 			return nil, err
 		}
-		rdr = link.MFile
+		if rdr2, ok := link.MFile.(io.ReadCloser); ok {
+			rdr = rdr2
+		} else {
+			rdr = io.NopCloser(link.MFile)
+		}
 	} else {
 		remoteFileSize := file.GetSize()
 		if length >= 0 && start+length >= remoteFileSize {

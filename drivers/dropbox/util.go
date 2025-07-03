@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/OpenListTeam/OpenList/drivers/base"
-	"github.com/OpenListTeam/OpenList/internal/op"
-	"github.com/OpenListTeam/OpenList/pkg/utils"
+	"github.com/OpenListTeam/OpenList/v4/drivers/base"
+	"github.com/OpenListTeam/OpenList/v4/internal/op"
+	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
 )
@@ -39,7 +39,7 @@ func (d *Dropbox) refreshToken() error {
 			if resp.ErrorMessage != "" {
 				return fmt.Errorf("failed to refresh token: %s", resp.ErrorMessage)
 			}
-			return fmt.Errorf("empty token returned from official API")
+			return fmt.Errorf("empty token returned from official API, a wrong refresh token may have been used")
 		}
 		d.AccessToken = resp.AccessToken
 		d.RefreshToken = resp.RefreshToken

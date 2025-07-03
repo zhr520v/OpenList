@@ -5,9 +5,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/OpenListTeam/OpenList/internal/model"
-	"github.com/OpenListTeam/OpenList/pkg/http_range"
-	"github.com/OpenListTeam/OpenList/pkg/utils"
+	"github.com/OpenListTeam/OpenList/v4/internal/model"
+	"github.com/OpenListTeam/OpenList/v4/pkg/http_range"
+	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 	"golang.org/x/time/rate"
 )
 
@@ -133,6 +133,13 @@ func (r *RateLimitFile) ReadAt(p []byte, off int64) (n int, err error) {
 		err = r.Limiter.WaitN(r.Ctx, n)
 	}
 	return
+}
+
+func (r *RateLimitFile) Close() error {
+	if c, ok := r.File.(io.Closer); ok {
+		return c.Close()
+	}
+	return nil
 }
 
 type RateLimitRangeReadCloser struct {
