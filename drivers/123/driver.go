@@ -32,6 +32,19 @@ type Pan123 struct {
 	apiRateLimit sync.Map
 }
 
+// 生成伪装头部的统一方法
+func (d *Pan123) getFakeHeaders() map[string]string {
+	fakeIP := "120.229.187.217"
+	return map[string]string{
+		"X-Real-IP":       fakeIP,
+		"X-Forwarded-For": fakeIP,
+		"user-agent":      "123pan/2.5.5(Android_13.1.2;Vivo)",
+		"platform":        "android",
+		"app-version":     "78",
+		"x-app-version":   "2.5.5",
+	}
+}
+
 func (d *Pan123) Config() driver.Config {
 	return config
 }
@@ -41,13 +54,15 @@ func (d *Pan123) GetAddition() driver.Additional {
 }
 
 func (d *Pan123) Init(ctx context.Context) error {
-	_, err := d.Request(UserInfo, http.MethodGet, nil, nil)
+	_, err := d.Request(UserInfo, http.MethodGet, func(req *resty.Request) {
+		req.SetHeaders(d.getFakeHeaders())
+	}, nil)
 	return err
 }
 
 func (d *Pan123) Drop(ctx context.Context) error {
 	_, _ = d.Request(Logout, http.MethodPost, func(req *resty.Request) {
-		req.SetBody(base.Json{})
+		req.SetBody(base.Json{}).SetHeaders(d.getFakeHeaders())
 	}, nil)
 	return nil
 }
@@ -67,15 +82,7 @@ func (d *Pan123) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 		//var resp DownResp
 		var headers map[string]string
 		if !utils.IsLocalIPAddr(args.IP) {
-			fakeIP := "120.229.187.217"
-			headers = map[string]string{
-				"X-Real-IP":       fakeIP,
-				"X-Forwarded-For": fakeIP,
-				"user-agent": "123pan/2.5.5(Android_13.1.2;Vivo)",
-		"platform": "android",
-		"app-version": "78",
-		"x-app-version": "2.5.5",
-			}
+			headers = d.getFakeHeaders()
 		}
 		data := base.Json{
 			"driveId":   0,
