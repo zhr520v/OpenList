@@ -67,9 +67,10 @@ func (d *Pan123) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 		//var resp DownResp
 		var headers map[string]string
 		if !utils.IsLocalIPAddr(args.IP) {
+			fakeIP := "120.229.187.217"
 			headers = map[string]string{
-				"X-Real-IP":       "120.229.187.217",
-				"X-Forwarded-For": args.IP,
+				"X-Real-IP":       fakeIP,
+				"X-Forwarded-For": fakeIP,
 				"user-agent": "123pan/2.5.5(Android_13.1.2;Vivo)",
 		"platform": "android",
 		"app-version": "78",
