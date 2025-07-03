@@ -25,7 +25,7 @@ env:
   GHCR_ORG_NAME: ${{ vars.GHCR_ORG_NAME || 'openlistteam' }}
   IMAGE_NAME: openlist-git
   IMAGE_NAME_DOCKERHUB: openlist
-  REGISTRY: ghcr.io
+  REGISTRY: docker.io
   ARTIFACT_NAME: 'binaries_docker_release'
   ARTIFACT_NAME_LITE: 'binaries_docker_release_lite'
   RELEASE_PLATFORMS: 'linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/arm/v6,linux/s390x,linux/ppc64le,linux/riscv64'
