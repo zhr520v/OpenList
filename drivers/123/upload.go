@@ -14,6 +14,9 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// 全局IP伪装变量
+var FAKE_IP = "120.229.187.66"
+
 func (d *Pan123) getS3PreSignedUrls(ctx context.Context, upReq *UploadResp, start, end int) (*S3PreSignedURLs, error) {
 	data := base.Json{
 		"bucket":          upReq.Data.Bucket,
@@ -131,7 +134,12 @@ func (d *Pan123) uploadS3Chunk(ctx context.Context, upReq *UploadResp, s3PreSign
 	}
 	req = req.WithContext(ctx)
 	req.ContentLength = curSize
-	//req.Header.Set("Content-Length", strconv.FormatInt(curSize, 10))
+	
+	// 添加IP伪装头部
+	req.Header.Set("X-Real-IP", FAKE_IP)
+	req.Header.Set("X-Forwarded-For", FAKE_IP)
+	req.Header.Set("User-Agent", "123pan/2.5.5(Android_13.1.2;Vivo)")
+	
 	res, err := base.HttpClient.Do(req)
 	if err != nil {
 		return err
