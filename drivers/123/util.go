@@ -20,6 +20,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// 全局IP伪装变量
+var FAKE_IP = "120.229.187.66"
+
 // do others that not defined in Driver interface
 
 const (
@@ -43,7 +46,6 @@ const (
 	S3Auth           = MainApi + "/file/s3_upload_object/auth"
 	UploadCompleteV2 = MainApi + "/file/upload_complete/v2"
 	S3Complete       = MainApi + "/file/s3_complete_multipart_upload"
-	//AuthKeySalt      = "8-8D$sL8gPjom7bk#cY"
 )
 
 func signPath(path string, os string, version string) (k string, v string) {
@@ -69,81 +71,6 @@ func GetApi(rawUrl string) string {
 	return u.String()
 }
 
-//func GetApi(url string) string {
-//	vm := js.New()
-//	vm.Set("url", url[22:])
-//	r, err := vm.RunString(`
-//	(function(e){
-//        function A(t, e) {
-//            e = 1 < arguments.length && void 0 !== e ? e : 10;
-//            for (var n = function() {
-//                for (var t = [], e = 0; e < 256; e++) {
-//                    for (var n = e, r = 0; r < 8; r++)
-//                        n = 1 & n ? 3988292384 ^ n >>> 1 : n >>> 1;
-//                    t[e] = n
-//                }
-//                return t
-//            }(), r = function(t) {
-//                t = t.replace(/\\r\\n/g, "\\n");
-//                for (var e = "", n = 0; n < t.length; n++) {
-//                    var r = t.charCodeAt(n);
-//                    r < 128 ? e += String.fromCharCode(r) : e = 127 < r && r < 2048 ? (e += String.fromCharCode(r >> 6 | 192)) + String.fromCharCode(63 & r | 128) : (e = (e += String.fromCharCode(r >> 12 | 224)) + String.fromCharCode(r >> 6 & 63 | 128)) + String.fromCharCode(63 & r | 128)
-//                }
-//                return e
-//            }(t), a = -1, i = 0; i < r.length; i++)
-//                a = a >>> 8 ^ n[255 & (a ^ r.charCodeAt(i))];
-//            return (a = (-1 ^ a) >>> 0).toString(e)
-//        }
-//
-//	   function v(t) {
-//	       return (v = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(t) {
-//	                   return typeof t
-//	               }
-//	               : function(t) {
-//	                   return t && "function" == typeof Symbol && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t
-//	               }
-//	       )(t)
-//	   }
-//
-//		for (p in a = Math.round(1e7 * Math.random()),
-//		o = Math.round(((new Date).getTime() + 60 * (new Date).getTimezoneOffset() * 1e3 + 288e5) / 1e3).toString(),
-//		m = ["a", "d", "e", "f", "g", "h", "l", "m", "y", "i", "j", "n", "o", "p", "k", "q", "r", "s", "t", "u", "b", "c", "v", "w", "s", "z"],
-//		u = function(t, e, n) {
-//			var r;
-//			n = 2 < arguments.length && void 0 !== n ? n : 8;
-//			return 0 === arguments.length ? null : (r = "object" === v(t) ? t : (10 === "".concat(t).length && (t = 1e3 * Number.parseInt(t)),
-//			new Date(t)),
-//			t += 6e4 * new Date(t).getTimezoneOffset(),
-//			{
-//				y: (r = new Date(t + 36e5 * n)).getFullYear(),
-//				m: r.getMonth() + 1 < 10 ? "0".concat(r.getMonth() + 1) : r.getMonth() + 1,
-//				d: r.getDate() < 10 ? "0".concat(r.getDate()) : r.getDate(),
-//				h: r.getHours() < 10 ? "0".concat(r.getHours()) : r.getHours(),
-//				f: r.getMinutes() < 10 ? "0".concat(r.getMinutes()) : r.getMinutes()
-//			})
-//		}(o),
-//		h = u.y,
-//		g = u.m,
-//		l = u.d,
-//		c = u.h,
-//		u = u.f,
-//		d = [h, g, l, c, u].join(""),
-//		f = [],
-//		d)
-//			f.push(m[Number(d[p])]);
-//		return h = A(f.join("")),
-//		g = A("".concat(o, "|").concat(a, "|").concat(e, "|").concat("web", "|").concat("3", "|").concat(h)),
-//		"".concat(h, "=").concat(o, "-").concat(a, "-").concat(g);
-//	})(url)
-//	   `)
-//	if err != nil {
-//		fmt.Println(err)
-//		return url
-//	}
-//	v, _ := r.Export().(string)
-//	return url + "?" + v
-//}
-
 func (d *Pan123) login() error {
 	var body base.Json
 	if utils.IsEmailFormat(d.Username) {
@@ -161,13 +88,14 @@ func (d *Pan123) login() error {
 	}
 	res, err := base.RestyClient.R().
 		SetHeaders(map[string]string{
-			"origin":      "https://www.123pan.com",
-			"referer":     "https://www.123pan.com/",
-			"user-agent":  "123pan/2.5.5(Android_13.1.2;Vivo)",
-			"platform":    "android",
-			"app-version": "78",
-			"x-app-version": "2.5.5",
-			//"user-agent":  base.UserAgent,
+			"origin":         "https://www.123pan.com",
+			"referer":        "https://www.123pan.com/",
+			"X-Real-IP":      FAKE_IP,
+			"X-Forwarded-For": FAKE_IP,
+			"user-agent":     "123pan/2.5.5(Android_13.1.2;Vivo)",
+			"platform":       "android",
+			"app-version":    "78",
+			"x-app-version":  "2.5.5",
 		}).
 		SetBody(body).Post(SignIn)
 	if err != nil {
@@ -181,33 +109,20 @@ func (d *Pan123) login() error {
 	return err
 }
 
-//func authKey(reqUrl string) (*string, error) {
-//	reqURL, err := url.Parse(reqUrl)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	nowUnix := time.Now().Unix()
-//	random := rand.Intn(0x989680)
-//
-//	p4 := fmt.Sprintf("%d|%d|%s|%s|%s|%s", nowUnix, random, reqURL.Path, "web", "3", AuthKeySalt)
-//	authKey := fmt.Sprintf("%d-%d-%x", nowUnix, random, md5.Sum([]byte(p4)))
-//	return &authKey, nil
-//}
-
 func (d *Pan123) Request(url string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
 	isRetry := false
 do:
 	req := base.RestyClient.R()
 	req.SetHeaders(map[string]string{
-		"origin":        "https://www.123pan.com",
-		"referer":       "https://www.123pan.com/",
-		"authorization": "Bearer " + d.AccessToken,
-		"user-agent":    "123pan/2.5.5(Android_13.1.2;Vivo)",
-		"platform":      "android",
-		"app-version":   "78",
-		"x-app-version": "2.5.5",
-		//"user-agent":    base.UserAgent,
+		"origin":         "https://www.123pan.com",
+		"referer":        "https://www.123pan.com/",
+		"authorization":  "Bearer " + d.AccessToken,
+		"X-Real-IP":      FAKE_IP,
+		"X-Forwarded-For": FAKE_IP,
+		"user-agent":     "123pan/2.5.5(Android_13.1.2;Vivo)",
+		"platform":       "android",
+		"app-version":    "78",
+		"x-app-version":  "2.5.5",
 	})
 	if callback != nil {
 		callback(req)
@@ -215,11 +130,6 @@ do:
 	if resp != nil {
 		req.SetResult(resp)
 	}
-	//authKey, err := authKey(url)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//req.SetQueryParam("auth-key", *authKey)
 	res, err := req.Execute(method, GetApi(url))
 	if err != nil {
 		return nil, err
