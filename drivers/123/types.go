@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
-
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 )
 
@@ -59,10 +58,12 @@ func (f File) Thumb() string {
 	if f.DownloadUrl == "" {
 		return ""
 	}
+
 	du, err := url.Parse(f.DownloadUrl)
 	if err != nil {
 		return ""
 	}
+
 	du.Path = strings.TrimSuffix(du.Path, "_24_24") + "_70_70"
 	query := du.Query()
 	query.Set("w", "70")
@@ -70,9 +71,11 @@ func (f File) Thumb() string {
 	if !query.Has("type") {
 		query.Set("type", strings.TrimPrefix(path.Base(f.FileName), "."))
 	}
+
 	if !query.Has("trade_key") {
 		query.Set("trade_key", "123pan-thumbnail")
 	}
+
 	du.RawQuery = query.Encode()
 	return du.String()
 }
@@ -80,13 +83,7 @@ func (f File) Thumb() string {
 var _ model.Obj = (*File)(nil)
 var _ model.Thumb = (*File)(nil)
 
-//func (f File) Thumb() string {
-//
-//}
-//var _ model.Thumb = (*File)(nil)
-
 type Files struct {
-	//BaseResp
 	Data struct {
 		Next     string `json:"Next"`
 		Total    int    `json:"Total"`
@@ -94,15 +91,7 @@ type Files struct {
 	} `json:"data"`
 }
 
-//type DownResp struct {
-//	//BaseResp
-//	Data struct {
-//		DownloadUrl string `json:"DownloadUrl"`
-//	} `json:"data"`
-//}
-
 type UploadResp struct {
-	//BaseResp
 	Data struct {
 		AccessKeyId     string `json:"AccessKeyId"`
 		Bucket          string `json:"Bucket"`
