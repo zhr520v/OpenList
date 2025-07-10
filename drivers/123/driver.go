@@ -26,14 +26,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// 全局变量，您只需要在这里修改IP地址即可实现全局伪装
-var FAKE_IP = "120.229.187.66"
-
 type Pan123 struct {
 	model.Storage
 	Addition
 	apiRateLimit sync.Map
-	client       *resty.Client
 }
 
 func (d *Pan123) Config() driver.Config {
@@ -42,65 +38,6 @@ func (d *Pan123) Config() driver.Config {
 
 func (d *Pan123) GetAddition() driver.Additional {
 	return &d.Addition
-}
-
-// 统一的请求头部设置方法
-func (d *Pan123) getGlobalHeaders() map[string]string {
-	return map[string]string{
-		"X-Real-IP":       FAKE_IP,
-		"X-Forwarded-For": FAKE_IP,
-		"user-agent":      "123pan/2.5.5(Android_13.1.2;Vivo)",
-		"platform":        "android",
-		"app-version":     "78",
-		"x-app-version":   "2.5.5",
-	}
-}
-
-// 修改Request方法，实现全局IP伪装
-func (d *Pan123) Request(url string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
-	// 应用速率限制
-	if err := d.APIRateLimit(context.Background(), url); err != nil {
-		return nil, err
-	}
-	
-	// 创建请求并设置全局伪装头部
-	req := d.client.R()
-	req.SetHeaders(d.getGlobalHeaders())
-	
-	// 如果有回调函数，执行它（可能会覆盖某些头部）
-	if callback != nil {
-		callback(req)
-	}
-	
-	// 执行请求
-	var res *resty.Response
-	var err error
-	
-	switch method {
-	case http.MethodGet:
-		res, err = req.Get(url)
-	case http.MethodPost:
-		res, err = req.Post(url)
-	case http.MethodPut:
-		res, err = req.Put(url)
-	case http.MethodDelete:
-		res, err = req.Delete(url)
-	default:
-		return nil, fmt.Errorf("unsupported method: %s", method)
-	}
-	
-	if err != nil {
-		return nil, err
-	}
-	
-	// 处理响应
-	if resp != nil {
-		if err := utils.Json.Unmarshal(res.Body(), resp); err != nil {
-			return nil, err
-		}
-	}
-	
-	return res.Body(), nil
 }
 
 func (d *Pan123) Init(ctx context.Context) error {
@@ -127,6 +64,14 @@ func (d *Pan123) List(ctx context.Context, dir model.Obj, args model.ListArgs) (
 
 func (d *Pan123) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	if f, ok := file.(File); ok {
+		//var resp DownResp
+		var headers map[string]string
+		if !utils.IsLocalIPAddr(args.IP) {
+			headers = map[string]string{
+				//"X-Real-IP":       "1.1.1.1",
+				"X-Forwarded-For": args.IP,
+			}
+		}
 		data := base.Json{
 			"driveId":   0,
 			"etag":      f.Etag,
@@ -136,15 +81,10 @@ func (d *Pan123) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 			"size":      f.Size,
 			"type":      f.Type,
 		}
-		
 		resp, err := d.Request(DownloadInfo, http.MethodPost, func(req *resty.Request) {
-			req.SetBody(data)
-			// 如果需要特殊的IP处理，可以在这里覆盖X-Forwarded-For
-			if !utils.IsLocalIPAddr(args.IP) {
-				req.SetHeader("X-Forwarded-For", args.IP)
-			}
+
+			req.SetBody(data).SetHeaders(headers)
 		}, nil)
-		
 		if err != nil {
 			return nil, err
 		}
