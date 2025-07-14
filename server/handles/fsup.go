@@ -28,6 +28,12 @@ func getLastModified(c *gin.Context) time.Time {
 }
 
 func FsStream(c *gin.Context) {
+	defer func() {
+		if n, _ := io.ReadFull(c.Request.Body, []byte{0}); n == 1 {
+			_, _ = utils.CopyWithBuffer(io.Discard, c.Request.Body)
+		}
+		_ = c.Request.Body.Close()
+	}()
 	path := c.GetHeader("File-Path")
 	path, err := url.PathUnescape(path)
 	if err != nil {
@@ -44,7 +50,6 @@ func FsStream(c *gin.Context) {
 	}
 	if !overwrite {
 		if res, _ := fs.Get(c, path, &fs.GetArgs{NoLog: true}); res != nil {
-			_, _ = utils.CopyWithBuffer(io.Discard, c.Request.Body)
 			common.ErrorStrResp(c, "file exists", 403)
 			return
 		}
@@ -90,15 +95,11 @@ func FsStream(c *gin.Context) {
 	} else {
 		err = fs.PutDirectly(c, dir, s, true)
 	}
-	defer c.Request.Body.Close()
 	if err != nil {
 		common.ErrorResp(c, err, 500)
 		return
 	}
 	if t == nil {
-		if n, _ := io.ReadFull(c.Request.Body, []byte{0}); n == 1 {
-			_, _ = utils.CopyWithBuffer(io.Discard, c.Request.Body)
-		}
 		common.SuccessResp(c)
 		return
 	}
@@ -108,6 +109,12 @@ func FsStream(c *gin.Context) {
 }
 
 func FsForm(c *gin.Context) {
+	defer func() {
+		if n, _ := io.ReadFull(c.Request.Body, []byte{0}); n == 1 {
+			_, _ = utils.CopyWithBuffer(io.Discard, c.Request.Body)
+		}
+		_ = c.Request.Body.Close()
+	}()
 	path := c.GetHeader("File-Path")
 	path, err := url.PathUnescape(path)
 	if err != nil {
@@ -124,7 +131,6 @@ func FsForm(c *gin.Context) {
 	}
 	if !overwrite {
 		if res, _ := fs.Get(c, path, &fs.GetArgs{NoLog: true}); res != nil {
-			_, _ = utils.CopyWithBuffer(io.Discard, c.Request.Body)
 			common.ErrorStrResp(c, "file exists", 403)
 			return
 		}
@@ -164,7 +170,7 @@ func FsForm(c *gin.Context) {
 	if len(mimetype) == 0 {
 		mimetype = utils.GetMimeType(name)
 	}
-	s := stream.FileStream{
+	s := &stream.FileStream{
 		Obj: &model.Object{
 			Name:     name,
 			Size:     file.Size,
@@ -180,9 +186,9 @@ func FsForm(c *gin.Context) {
 		s.Reader = struct {
 			io.Reader
 		}{f}
-		t, err = fs.PutAsTask(c, dir, &s)
+		t, err = fs.PutAsTask(c, dir, s)
 	} else {
-		err = fs.PutDirectly(c, dir, &s, true)
+		err = fs.PutDirectly(c, dir, s, true)
 	}
 	if err != nil {
 		common.ErrorResp(c, err, 500)
