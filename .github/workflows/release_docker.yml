@@ -20,17 +20,16 @@ concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
 env:
-  # 移除 GHCR_ORG_NAME 和 REGISTRY 变量
   DOCKERHUB_ORG_NAME: ${{ vars.DOCKERHUB_ORG_NAME || 'zhr520v' }}
-  IMAGE_NAME: openlist-git # 此变量不再用于 GHCR，但保留以防 build.sh 依赖
+  IMAGE_NAME: openlist-git
   IMAGE_NAME_DOCKERHUB: openlist
   ARTIFACT_NAME: 'binaries_docker_release'
   ARTIFACT_NAME_LITE: 'binaries_docker_release_lite'
-  RELEASE_PLATFORMS: 'linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/arm/v6,linux/ppc64le,linux/riscv64,linux/loong64' ### Temporarily disable Docker builds for linux/s390x architectures for unknown reasons.
+  # 💥 已修改：只保留需要的四个平台
+  RELEASE_PLATFORMS: 'linux/amd64,linux/arm64,linux/arm/v7,linux/386'
   IMAGE_PUSH: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
 
 permissions:
-  # 移除 packages: write 权限，因为不再推送 GHCR
   contents: read 
 
 jobs:
@@ -166,7 +165,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.DOCKERHUB_ORG_NAME }}/${{ env.IMAGE_NAME_DOCKERHUB }} # 仅保留 Docker Hub 镜像
+            ${{ env.DOCKERHUB_ORG_NAME }}/${{ env.IMAGE_NAME_DOCKERHUB }}
           tags: >
             ${{ github.event_name == 'workflow_dispatch'
               && format('type=raw,value={0}', github.event.inputs.manual_tag)
@@ -241,7 +240,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.DOCKERHUB_ORG_NAME }}/${{ env.IMAGE_NAME_DOCKERHUB }} # 仅保留 Docker Hub 镜像
+            ${{ env.DOCKERHUB_ORG_NAME }}/${{ env.IMAGE_NAME_DOCKERHUB }}
           tags: >
             ${{ github.event_name == 'workflow_dispatch'
               && format('type=raw,value={0}', github.event.inputs.manual_tag)
