@@ -41,7 +41,9 @@ func (d *Pan123) GetAddition() driver.Additional {
 }
 
 func (d *Pan123) Init(ctx context.Context) error {
-	_, err := d.Request(UserInfo, http.MethodGet, nil, nil)
+	_, err := d.Request(UserInfo, http.MethodGet, func(req *resty.Request) {
+		req.SetHeader("platform", "web")
+	}, nil)
 	return err
 }
 
@@ -64,18 +66,6 @@ func (d *Pan123) List(ctx context.Context, dir model.Obj, args model.ListArgs) (
 
 func (d *Pan123) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	if f, ok := file.(File); ok {
-		//var resp DownResp
-		var headers map[string]string
-		if !utils.IsLocalIPAddr(args.IP) {
-			headers = map[string]string{
-				//"X-Real-IP":       "1.1.1.1",
-				"X-Forwarded-For": args.IP,
-				"user-agent": "123pan/2.5.5(Android_13.1.2;Vivo)",
-		"platform": "android",
-		"app-version": "78",
-		"x-app-version": "2.5.5",
-			}
-		}
 		data := base.Json{
 			"driveId":   0,
 			"etag":      f.Etag,
@@ -86,8 +76,7 @@ func (d *Pan123) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 			"type":      f.Type,
 		}
 		resp, err := d.Request(DownloadInfo, http.MethodPost, func(req *resty.Request) {
-
-			req.SetBody(data).SetHeaders(headers)
+			req.SetBody(data)
 		}, nil)
 		if err != nil {
 			return nil, err
